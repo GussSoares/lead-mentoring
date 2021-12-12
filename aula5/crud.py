@@ -1,13 +1,20 @@
+from typing import List
+
 from sqlalchemy.orm import Session
-import models, schemas
+
+import models
+import schemas
+from utils import hash as hashfile
+
 
 def create_user(db: Session, user: schemas.UserCreate):
     # db_user = models.User(**user.dict())
     user_dict = user.dict()
+    hash = hashfile.hash_password_passlib(user_dict["password"])
     db_user = models.User(
         name=user_dict["name"],
         email=user_dict["email"],
-        password=user_dict["password"]
+        password=hash
     )
     db.add(db_user)
     db.commit()
@@ -23,9 +30,17 @@ def create_item(db: Session, item: schemas.ItemCreate, user_id: int):
     return db_item
 
 
+def get_items_by_user_id(db: Session, user_id: int):
+    return db.query(models.Item).filter(models.Item.owner_id == user_id).all()
+
+
 def get_user_by_id(db: Session, user_id: int):
     return db.query(models.User).filter(models.User.id == user_id).first()
 
 
 def get_user_by_email(db: Session, user_email: str):
     return db.query(models.User).filter(models.User.email == user_email).first()
+
+
+def get_users(db: Session) -> List[models.User]:
+    return db.query(models.User).all()
